@@ -1,0 +1,41 @@
+name: build-aarch64-binary
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch: # Позволяет запускать сборку вручную в меню Actions
+
+env:
+  APP: amneziawg-go
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          check-latest: true
+
+      - name: Build for msm8916 (aarch64)
+        run: |
+          # GOOS=linux — целевая ОС Linux
+          # GOARCH=arm64 — архитектура aarch64
+          # CGO_ENABLED=0 — полная статическая сборка (без зависимостей от libc)
+          # -ldflags="-s -w" — максимально уменьшаем размер бинарника
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
+          go build -v -ldflags="-s -w" -o amneziawg-go-linux-aarch64
+
+      - name: Upload result to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: amneziawg-go-aarch64
+          path: amneziawg-go-linux-aarch64
+          retention-days: 7
